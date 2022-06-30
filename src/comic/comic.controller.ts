@@ -7,7 +7,7 @@ export class ComicController {
 
   @Post('item')
   async findOne(@Body() body: { source: string }) {
-    const res = await this.comicService.getComicHtml(body.source);
+    const res = await this.comicService.getCooooHtml();
 
     return res.htmlText;
   }
