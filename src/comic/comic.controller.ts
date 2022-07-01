@@ -6,8 +6,26 @@ export class ComicController {
   constructor(private readonly comicService: ComicService) {}
 
   @Get('search')
-  async findOne(@Query() query: { searchString: string }) {
+  async search(@Query() query: { searchString: string }) {
     const res = await this.comicService.searchComic(query.searchString);
+
+    return res;
+  }
+
+  @Get('detail')
+  async detail(@Query() query: { origonHref: string }) {
+    const res = await this.comicService.getComicDetailFromCocomanga(
+      query.origonHref,
+    );
+
+    return res;
+  }
+
+  @Get('chapter')
+  async chapter(@Query() query: { origonHref: string }) {
+    const res = await this.comicService.getComicChapterFromCocomanga(
+      query.origonHref,
+    );
 
     return res;
   }

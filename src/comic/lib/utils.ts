@@ -2,12 +2,9 @@ import * as superagent from 'superagent';
 import fs from 'fs';
 import * as path from 'path';
 
-/** 动漫 id 分割线 */
-export const SEPARAPOR = '__';
-
-/** 获取动漫唯一标识符 id */
-export const getComicId = (source: string, path: string) => {
-  return `${source}${SEPARAPOR}${path}`;
+/** 爬虫源地址 */
+export const getOriginHref = (source: string, path: string) => {
+  return `${source}${path}`;
 };
 
 /**

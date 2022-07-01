@@ -1,7 +1,7 @@
-import { ComicBase } from './types';
+import { ComicBase, ComicDetail } from './types';
 import puppeteer from 'puppeteer';
 import { load } from 'cheerio';
-import { getComicId } from './utils';
+import { getOriginHref } from './utils';
 
 const PATH = 'https://www.cocomanga.com';
 
@@ -15,61 +15,110 @@ const browserOpts = {
   ],
 };
 
-/**
- * 获取网站html文档
- * @description  https://www.cocomanga.com/
- */
-async function getCocomangaHtml(url: string) {
-  const browser = await puppeteer.launch(browserOpts);
-  const page = await browser.newPage();
-
-  await page.setRequestInterception(true);
-
-  page.on('request', (interceptRequest) => {
-    const headers = Object.assign({}, interceptRequest.headers(), {
-      'Accept-Language': 'zh-CN,zh;q=0.5',
-    });
-
-    interceptRequest.continue({ headers });
-  });
-
-  await page.goto(url);
-
-  const htmlText = await page.$eval('html', (elements) => elements.innerHTML);
-
-  await browser.close();
-
-  if (typeof htmlText !== 'string' || htmlText.indexOf('<body') < 0) {
-    return null;
+export class Cocomanga {
+  static getSearchUrl(searchStr: string) {
+    return `${PATH}/search?type=1&searchString=${searchStr}`;
   }
 
-  const $ = load(`<html>${htmlText}</<html>>`);
+  /**
+   * 获取网站html文档
+   * @description  https://www.cocomanga.com/
+   */
+  static async getCocomangaHtml(url: string) {
+    const browser = await puppeteer.launch(browserOpts);
+    const page = await browser.newPage();
 
-  return $;
-}
+    await page.setRequestInterception(true);
 
-export async function searchCocomanga(searchStr: string) {
-  const result: ComicBase[] = [];
+    await page.setDefaultNavigationTimeout(180000);
 
-  const $ = await getCocomangaHtml(
-    `${PATH}/search?type=1&searchString=${searchStr}`,
-  );
+    page.on('request', (interceptRequest) => {
+      const headers = Object.assign({}, interceptRequest.headers(), {
+        'Accept-Language': 'zh-CN,zh;q=0.5',
+      });
 
-  if (!$) {
+      interceptRequest.continue({ headers });
+    });
+
+    await page.goto(url);
+
+    const htmlText = await page.$eval('html', (elements) => elements.innerHTML);
+
+    await browser.close();
+
+    if (typeof htmlText !== 'string' || htmlText.indexOf('<body') < 0) {
+      return null;
+    }
+
+    return `<html>${htmlText}</<html>>`;
+  }
+
+  /**
+   * 格式化查询结果
+   * @param htmlText 页面文本
+   * @returns
+   */
+  static async formatCocomangaSearch(htmlText: string) {
+    const result: ComicBase[] = [];
+
+    const $ = load(htmlText);
+
+    $('dl')?.each((i, el) => {
+      const portraitUrl = $(el).find('dt a').attr('data-original');
+      const href = $(el).find('dt a').attr('href');
+      const name = $(el).find('dd a').text();
+
+      result.push({
+        originHref: getOriginHref(PATH, href),
+        name,
+        portraitUrl,
+      });
+    });
+
     return result;
   }
 
-  $('dl')?.each((i, el) => {
-    const portraitUrl = $(el).find('dt a').attr('data-original');
-    const href = $(el).find('dt a').attr('href');
-    const name = $(el).find('dd a').text();
+  /** 详情页数据 */
+  static async formatCocomangaDetail(htmlText: string) {
+    const $ = load(htmlText);
 
-    result.push({
-      id: getComicId(PATH, href),
-      name,
+    const portraitUrl = $('dt a').attr('data-original');
+    const comicName = $('h1').text();
+
+    const result: ComicDetail = {
+      originHref: '',
       portraitUrl,
-    });
-  });
+      name: comicName,
+      chapters: [],
+    };
 
-  return result;
+    $('.all_data_list ul li a')?.each((i, el) => {
+      const href = $(el).attr('href');
+      const name = $(el).attr('title');
+
+      result.chapters.push({
+        originHref: getOriginHref(PATH, href),
+        name,
+      });
+    });
+
+    return result;
+  }
+
+  /** 章节页数据 */
+  static async formatChapterDetail(htmlText: string) {
+    const $ = load(htmlText);
+    const result = {
+      name: '',
+      images: [],
+    };
+
+    $('.mh_comicpic img')?.each((i, el) => {
+      const href = $(el).attr('src');
+
+      result.images.push(href);
+    });
+
+    return result;
+  }
 }

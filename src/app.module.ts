@@ -6,21 +6,25 @@ import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { BlogModule } from './blog/blog.module';
 import { UserModule } from './user/user/user.module';
-import { ComicService } from './comic/comic.service';
 import { ComicModule } from './comic/comic.module';
-import { ComicController } from './comic/comic.controller';
 
 @Module({
   imports: [
-    NestLogsModule,
-    MongooseModule.forRoot('mongodb://localhost/nest-blog', {
+    MongooseModule.forRoot('mongodb://180.76.121.22:27017/blog', {
       useNewUrlParser: true,
+      useUnifiedTopology: true,
+      authSource: 'admin',
+      auth: {
+        username: 'liuyonghui',
+        password: 'liu199699',
+      },
     }),
+    NestLogsModule,
     BlogModule,
     UserModule,
     ComicModule,
   ],
-  controllers: [AppController, ComicController],
-  providers: [AppService, ComicService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

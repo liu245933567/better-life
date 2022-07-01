@@ -1,17 +1,16 @@
 export interface ComicBase {
   /** 动漫 id  */
-  id: string;
+  originHref: string;
   name: string;
   /** 动漫头像 */
   portraitUrl: string;
 }
 
 interface ChapterInfo {
-  id: string;
+  originHref: string;
   name: string;
-  images: string[];
 }
 
-export interface ComicInfo extends ComicBase {
+export interface ComicDetail extends ComicBase {
   chapters: ChapterInfo[];
 }
